@@ -7,8 +7,31 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="container">
+
+    <!-- Auth Ekranı -->
+    <div class="container" id="authContainer">
         <h1>Yapılacaklar Listesi</h1>
+        <div class="auth-tabs">
+            <button class="tab-btn active" id="loginTab">Giriş Yap</button>
+            <button class="tab-btn" id="registerTab">Kayıt Ol</button>
+        </div>
+        <div id="authError" class="auth-error hidden"></div>
+        <form id="authForm">
+            <input type="email" id="emailInput" placeholder="E-posta" required>
+            <input type="password" id="passwordInput" placeholder="Şifre (min. 6 karakter)" required>
+            <button type="submit" id="authSubmitBtn">Giriş Yap</button>
+        </form>
+    </div>
+
+    <!-- Todo Ekranı -->
+    <div class="container hidden" id="appContainer">
+        <div class="app-header">
+            <h1>Yapılacaklar Listesi</h1>
+            <div class="user-info">
+                <span id="userEmail"></span>
+                <button id="logoutBtn">Çıkış</button>
+            </div>
+        </div>
         <div class="input-area">
             <input type="text" id="todoInput" placeholder="Yeni görev ekle...">
             <button id="addBtn">Ekle</button>
@@ -19,6 +42,7 @@
             <button id="clearBtn">Tümünü Temizle</button>
         </div>
     </div>
+
     <script src="script.js"></script>
 </body>
 </html>

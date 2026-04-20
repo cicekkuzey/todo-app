@@ -8,7 +8,7 @@ function authHeaders() {
     return {
         'Content-Type': 'application/json',
         'apikey': SUPABASE_KEY,
-        'Authorization': `Bearer ${accessToken || SUPABASE_KEY}`,
+        'Authorization': `Bearer ${accessToken}`,
         'Prefer': 'return=representation'
     };
 }
@@ -22,7 +22,7 @@ async function signUp(email, password) {
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.msg || data.error_description || 'Kayıt başarısız');
-    if (!data.access_token) throw new Error('E-posta doğrulaması gerekebilir. Lütfen e-postanı kontrol et.');
+    if (!data.access_token) throw new Error('E-posta doğrulaması gerekiyor. Lütfen e-postanı kontrol et.');
     return data;
 }
 
@@ -37,11 +37,30 @@ async function signIn(email, password) {
     return data;
 }
 
+async function refreshSession(refreshToken) {
+    const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY },
+        body: JSON.stringify({ refresh_token: refreshToken })
+    });
+    if (!res.ok) return null;
+    return res.json();
+}
+
 async function signOut() {
     await fetch(`${SUPABASE_URL}/auth/v1/logout`, {
         method: 'POST',
         headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${accessToken}` }
     });
+    localStorage.removeItem('sb_session');
+}
+
+function saveSession(data) {
+    localStorage.setItem('sb_session', JSON.stringify({
+        access_token: data.access_token,
+        refresh_token: data.refresh_token,
+        user: data.user
+    }));
 }
 
 // --- Todos ---
@@ -179,6 +198,7 @@ document.getElementById('authForm').addEventListener('submit', async (e) => {
     try {
         const data = isLogin ? await signIn(email, password) : await signUp(email, password);
         accessToken = data.access_token;
+        saveSession(data);
         showApp(data.user);
     } catch (err) {
         setAuthError(err.message);
@@ -213,3 +233,22 @@ document.getElementById('clearBtn').addEventListener('click', async () => {
         await loadAndRender();
     }
 });
+
+// --- Init: oturumu geri yükle ---
+(async () => {
+    const saved = localStorage.getItem('sb_session');
+    if (!saved) return;
+    try {
+        const session = JSON.parse(saved);
+        const data = await refreshSession(session.refresh_token);
+        if (!data || !data.access_token) {
+            localStorage.removeItem('sb_session');
+            return;
+        }
+        accessToken = data.access_token;
+        saveSession(data);
+        showApp(data.user);
+    } catch {
+        localStorage.removeItem('sb_session');
+    }
+})();
